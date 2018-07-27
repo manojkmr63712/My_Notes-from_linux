@@ -1,0 +1,185 @@
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+
+
+echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+
+sudo apt-get update
+
+sudo apt-get install -y mongodb-org
+
+sudo service mongod start
+
+mongo 
+
+
+sudo service mongod stop
+
+sudo service mongod restart
+
+
+
+
+> db
+test
+> show dbs
+admin  0.000GB
+local  0.000GB
+> use manoj
+switched to db manoj
+> db.createCollection("nrm")
+{ "ok" : 1 }
+> show collections
+nrm
+> 
+
+
+
+mongoimport --db manoj --collection nrm --drop --file /home/manoj/Desktop/nrm.json
+
+
+> db.nrm.find()
+
+> db.nrm.find().pretty()
+
+> db.nrm.find({ "lastName": "Rowe" } ).pretty()
+
+
+-----------------------------------https://github.com/mongodb/mongo-hadoop/wiki/Pig-Usage
+
+nstallation
+
+    Obtain the MongoDB Hadoop Connector. You can either build it or download the jars. The releases page also includes instructions for use with Maven and Gradle. For Pig, you'll need the "core" jar and the "pig" jar.
+    Get a JAR for the MongoDB Java Driver. The connector requires at least version 3.0.0 of the driver "uber" jar (called "mongo-java-driver.jar").
+    Use REGISTER statements in your Pig script to include these JARs (core, pig, and the Java driver), e.g., REGISTER /path-to/mongo-hadoop-pig-<version>.jar;.
+
+Reading into Pig
+From a MongoDB collection
+
+To load records from MongoDB database to use in a Pig script, a class called MongoLoader is provided. To use it, first register the dependency jars in your script and then specify the Mongo URI to load with the MongoLoader class.
+
+-- First, register jar dependencies
+REGISTER mongo-java-driver.jar  
+REGISTER mongo-hadoop-core.jar
+REGISTER mongo-hadoop-pig.jar
+
+raw = LOAD 'mongodb://localhost:27017/demo.yield_historical.in' USING com.mongodb.hadoop.pig.MongoLoader;
+
+MongoLoader can be used in two ways - Dynamic Schema and Fixed Schema mode. By creating an instance of the class without specifying any field names in the constructor (as in the previous snippet) each record will appear to Pig as a tuple containing a single Map that corresponds to the document from the collection, for example:
+
+([bc2Year#7.87,bc3Year#7.9,bc1Month#,bc5Year#7.87,_id#631238400000,bc10Year#7.94,bc20Year#,bc7Year#7.98,bc6Month#7.89,bc3Month#7.83,dayOfWeek#TUESDAY,bc30Year#8,bc1Year#7.81])
+
+However, by creating a MongoLoader instance with a specific list of field names, you can map fields in the document to fields in a Pig named tuple datatype. When used this way, MongoLoader takes two arguments:
+
+schema - a schema (list of fields/datatypes) that will map fields in the document to fields in the Pig records. See section below on Datatype Mapping for details.
+
+idAlias - an alias to use for the _id field in documents retrieved from the collection. The string "_id" is not a legal pig variable name, so the contents of the field in _id will be mapped to a value in Pig accordingly by providing a value here.
+
+Example:
+
+-- Load two fields from the documents in the collection specified by this URI
+-- map the "_id" field in the documents to the "id" field in pig
+> raw = LOAD 'mongodb://localhost:27017/demo.yield_historical.in' using com.mongodb.hadoop.pig.MongoLoader('id, bc10Year', 'id');
+> raw_limited = LIMIT raw 3;
+> dump raw_limited; 
+(631238400000,7.94)
+(631324800000,7.99)
+(631411200000,7.98)
+
+Note: Pig 0.9 and earlier have issues with non-named tuples. You may need to unpack and name the tuples explicitly, for example: The tuple (1,2,3) can not be transformed into a MongoDB document. But, FLATTEN((1,2,3)) as v1, v2, v3 can successfully be stored as {'v1': 1, 'v2': 2, 'v3': 3} Pig 0.10 and later handles both cases correctly, so avoiding Pig 0.9 or earlier is recommended.
+
+
+
+
+
+
+---------------------------------https://github.com/mongodb/mongo-hadoop/wiki/Hive-Usage
+
+
+
+
+
+
+
+
+
+By default, any table created in Hive is HDFS-based; that is, the metadata and underlying rows of data associated with the table is stored in HDFS. Mongo-Hadoop now supports the creation of MongoDB-based Hive tables and BSON-based Hive tables. Both MongoDB-based Hive tables and BSON-based Hive tables can be:
+
+    Queried just like HDFS-based Hive tables.
+    Combined with HDFS-based Hive tables in joins and sub-queries
+
+Installation
+
+    Obtain the MongoDB Hadoop Connector. You can either build it or download the jars. For Hive, you'll need the "core" jar and the "hive" jar.
+    Get a JAR for the MongoDB Java Driver. The connector requires at least version 3.0.0 of the driver "uber" jar (called "mongo-java-driver.jar").
+    In your Hive script, use ADD JAR commands to include these JARs (core, hive, and the Java driver), e.g., ADD JAR /path-to/mongo-hadoop-hive-<version>.jar;.
+
+Requirements
+Supported Hadoop and Hive versions
+
+As of August 2013, only Hive versions <= 0.10 are stable. Mongo-Hadoop currently supports Hive versions >= 0.9. Some classes and functions are deprecated in Hive 0.11, but they're still functional.
+
+Hadoop versions greater than 0.20.x are supported. CDH4 is supported, but CDH3 with its native Hive 0.7 is not. However, CDH3 is compatible with newer versions of Hive. Installing a non-native version with CDH3 can be used with Mongo-Hadoop.
+Quickstart Example
+
+CREATE TABLE individuals
+( 
+  id INT,
+  name STRING,
+  age INT,
+  work STRUCT<title:STRING, hours:INT>
+)
+STORED BY 'com.mongodb.hadoop.hive.MongoStorageHandler'
+WITH SERDEPROPERTIES('mongo.columns.mapping'='{"id":"_id","work.title":"job.position"}')
+TBLPROPERTIES('mongo.uri'='mongodb://localhost:27017/test.persons');
+
+The new table individual is a MongoDB-based Hive table. The table can now be queried within Hive just like a HDFS-based Hive table:
+
+SELECT name, age
+FROM individuals
+WHERE id > 100;
+
+Connecting to MongoDB - MongoStorageHandler
+
+The creation of MongoDB-based Hive tables is handled by MongoStorageHandler. It also handles retrieving data from such tables (using select) and storing data into such tables (using insert).
+
+CREATE [EXTERNAL] TABLE <tablename>
+(<schema>)
+STORED BY 'com.mongodb.hadoop.hive.MongoStorageHandler'
+[WITH SERDEPROPERTIES('mongo.columns.mapping'='<JSON mapping>')]
+TBLPROPERTIES('mongo.uri'='<MongoURI>');
+
+There are two ways to specify what MongoDB collection should back the Hive table. In the example above, the mongo.uri table property specifies a MongoDB connection string that points to a collection. This stores the URI in the table, which may be unsuitable if you pass credentials (such as username:password) as part of the connection string. It is also possible to specify the connection string in a properties file like this:
+
+# HiveTable.properties
+mongo.input.uri=mongodb://...
+
+You can provide the path to the properties file using the mongo.properties.path table parameter:
+
+CREATE TABLE ...
+TBLPROPERTIES('mongo.properties.path'='HiveTable.properties')
+
+Note that the referenced collection doesn't have to empty when creating the corresponding Hive table.
+
+Optionally, you can specify a correspondence to map certain Hive columns and Hive struct fields to specific MongoDB fields in the underlying collection, using the mongo.columns.mapping option in SERDEPROPERTIES. This option is also available upon creation of a BSON-based Hive table (see below).
+
+If the table created is EXTERNAL, when the table is dropped only its metadata is deleted; the underlying MongoDB collection remains intact. On the other hand, if the table is not EXTERNAL, dropping the table deletes both the metadata associated with the table and the underlying MongoDB collection.
+Limitations of MongoStorageHandler
+
+    INSERT INTO vs. INSERT OVERWRITE: As of now, there's no way for a table created with any custom StorageHandler to distinguish between the INSERT INTO TABLE and INSERT OVERWRITE commands. So both commands do the same thing: insert certain rows of data into a MongoDB-based Hive table. So to INSERT OVERWRITE, you'd have to first drop the table and then insert into the table.
+
+
+
+
+
+---------------------------https://community.hortonworks.com/questions/38554/how-to-import-data-from-mongodb-to-hive-or-hbase.html
+
+    CREATE TABLE individuals
+    ( 
+      id INT,
+      name STRING,
+      age INT,
+      work STRUCT<title:STRING, hours:INT>
+    )
+    STORED BY 'com.mongodb.hadoop.hive.MongoStorageHandler'
+    WITH SERDEPROPERTIES('mongo.columns.mapping'='{"id":"_id","work.title":"job.position"}')
+    TBLPROPERTIES('mongo.uri'='mongodb://localhost:27017/test.persons');

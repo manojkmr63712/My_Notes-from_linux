@@ -1,0 +1,9 @@
+spark-shell --driver-class-path /usr/share/java/mysql-connector-java-*.jar -- jars /usr/share/java/mysql-connector-java-*.jar
+
+val personDB = sqlContext.load("jdbc",Map("url" -> "jdbc:mysql://localhost:3306/dbname?user=hive@password=password","dbtable" -> "tablname"));
+
+personDB.registerTempTable("add")
+
+sqlContext.sql("select * from add").foreach(println)
+
+personDB.save("hdfs://localhost:54310/mysqldb")

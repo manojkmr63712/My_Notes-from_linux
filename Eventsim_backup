@@ -1,0 +1,138 @@
+
+EVENTSIM DEMO:
+
+* cd /opt/.
+
+* wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F	                %2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u91-b14/jdk-8u91-linux-x64.tar.gz"
+
+* tar xzf jdk-8u91-linux-x64.tar.gz
+
+* cd /opt/jdk1.8.0_91/
+
+* alternatives --install /usr/bin/java java /opt/jdk1.8.0_91/bin/java 2
+
+* alternatives --config java
+
+*  java -version
+
+
+Download zip from eventsim :
+
+* https://github.com/Interana/eventsim/archive/master.zip
+
+* unzip master.zip
+
+* install sbt if not present 
+ 	-> wget http://dl.bintray.com/sbt/rpm/sbt-0.13.5.rpm
+	-> sudo yum localinstall sbt-0.13.5.rpm
+	-> sbt --verison
+
+
+* sbt assembly
+
+
+
+* chmod +x bin/eventsim
+
+* bin/eventsim --help
+
+* bin/eventsim -c "examples/example-config.json" --from 50 --nusers 100 --growth-rate 0.01 data/ash.json
+
+
+TOPIC CREATION FOR KAFKA:
+
+* cd /opt/cloudera/parcels/KAFKA
+
+* bin/kafka-topics --create --zookeeper 50.59.42.105:2181 --replication-factor 1 --partitions 1 --topic event_yb
+
+* bin/kafka-topics --list --zookeeper 50.59.42.105:2181 
+
+// Sending messages from console: 
+
+/home/ashwin/Eventsim/eventsim-master
+
+* bin/eventsim -c "examples/example-config.json" --from 50 --nusers 100 --growth-rate 0.01 --kafkaBrokerList 50.59.42.105:9092 -k event
+
+Starting the consumer(to receive data or messages generated from server): 
+
+* bin/kafka-console-consumer --zookeeper 50.59.42.105:2181 --topic event_topic –from-beginning
+
+
+###################################################################################
+bin/kafka-console-producer --broker-list 50.59.42.105:9092 --topic ashwintest
+
+bin/kafka-topics --create --zookeeper 50.59.42.104:2181 --partitions 1 --topic ashwintest
+
+#################################################################################
+Configuring the flume configuration file :
+
+
+bin/kafka-console-consumer --zookeeper 138.201.50.12:2181 --topic aswin –from-beginning
+
+sudo nano aswin
+aswin.sources  = source1
+aswin.channels = channel1
+aswin.sinks = sink1
+
+ aswin.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+ aswin.sources.source1.zookeeperConnect = 138.201.50.12:2181
+ aswin.sources.source1.topic = t2
+ aswin.sources.source1.groupId = flume
+ aswin.sources.source1.channels = channel1
+ aswin.sources.source1.interceptors = i1
+ aswin.sources.source1.interceptors.i1.type = timestamp
+ aswin.sources.source1.kafka.consumer.timeout.ms = 100
+
+ aswin.channels.channel1.type = memory
+ aswin.channels.channel1.capacity = 100000
+ aswin.channels.channel1.transactionCapacity = 1000
+
+ aswin.sinks.sink1.type = hdfs
+ aswin.sinks.sink1.hdfs.path =/data/nk/%{topic}/%y-%m-%d
+ aswin.sinks.sink1.hdfs.rollInterval = 5
+ aswin.sinks.sink1.hdfs.rollSize = 0
+ aswin.sinks.sink1.hdfs.rollCount = 10
+ aswin.sinks.sink1.hdfs.fileType = DataStream
+
+aswin.sinks.sink1.channel = channel1
+
+flume-ng agent -f 
+
+Flume/config
+
+flume-ng agent -f flume_config -n aswin
+
+HIVE:
+
+create Database
+create table
+	create table json_table(json string);
+LOAD Data from HDFS:
+	
+LOAD DATA INPATH 'hdfs:/user/eventsim/data/event_t1/Flume_16-07-22/FlumeData.*’ INTO TABLE json_table;
+
+
+select get_json_object(json_table.json,'$.ts') as ts,get_json_object(json_table.json,'$.userId') as userID,get_json_object(json_table.json,'$.sessionId') as sessionId,get_json_object(json_table.json,'$.status') as status,get_json_object(json_table.json,'$.location') as location,get_json_object(json_table.json,'$.userAgent') as browser,get_json_object(json_table.json,'$.lastName') as lastname,get_json_object(json_table.json,'$.firstName') as firstnamae,get_json_object(json_table.json,'$.registration') as registration,get_json_object(json_table.json,'$.gender') as gender,get_json_object(json_table.json,'$.artist') as artist,get_json_object(json_table.json,'$.song') as song,get_json_object(json_table.json,'$.length') as songlength from json_table where get_json_object(json_table.json,'$.ts') is not null;
+
+
+create table music_table as select get_json_object(json_table.json,'$.ts') as ts,get_json_object(json_table.json,'$.userId') as userId,get_json_object(json_table.json,'$.sessionId') as sessionId,get_json_object(json_table.json,'$.status') as status,get_json_object(json_table.json,'$.location') as location,get_json_object(json_table.json,'$.userAgent') as browser,get_json_object(json_table.json,'$.lastName') as lastname,get_json_object(json_table.json,'$.firstName') as firstnamae,get_json_object(json_table.json,'$.registration') as registration,get_json_object(json_table.json,'$.gender') as gender,get_json_object(json_table.json,'$.artist') as artist,get_json_object(json_table.json,'$.song') as song,get_json_object(json_table.json,'$.length') as songlength from json_table where get_json_object(json_table.json,'$.ts') is not null;
+
+
+
+
+CREATE TABLE music_master AS SELECT from_unixtime(CAST(ts/1000 as BIGINT), 'yyyy-MM-d hh:mm:ss') as date_time,userid,sessionid,status,location,browser,lastname,firstnamae,gender,artist,song,songlength,from_unixtime(CAST(registration/1000 as BIGINT), 'yyyy-MM-d hh:mm:ss') as reg_date FROM music_table WHERE ts IS NOT NULL;
+
+
+
+create table loc_song as select count(*) as song_cnt,location from music_table group by location order by song_cnt desc limit 10;
+
+
+create table gender_song as select gender,count(song) as songcount from music_master group by gender;
+
+
+
+export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64
+export KAFKA_HOME=/opt/kafka-0.8.1.1
+export KAFKA=$KAFKA_HOME/bin
+export KAFKA_CONFIG=$KAFKA_HOME/config
+

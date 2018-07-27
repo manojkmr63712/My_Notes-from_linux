@@ -1,0 +1,180 @@
+working with list
+>>> cast = ["Cleese", 'Palin', 'Jones', "Idle"]
+>>> print(cast)
+['Cleese', 'Palin', 'Jones', 'Idle']
+>>> print(len(cast))
+4
+>>> print(cast[1])
+Palin
+>>> cast.append("Gilliam")
+>>> print(cast)
+['Cleese', 'Palin', 'Jones', 'Idle', 'Gilliam']
+>>> cast.pop()
+'Gilliam'
+>>> print(cast)
+['Cleese', 'Palin', 'Jones', 'Idle']
+>>> cast.extend(["Gilliam", "Chapman"])
+>>> print(cast)
+['Cleese', 'Palin', 'Jones', 'Idle', 'Gilliam', 'Chapman']
+>>> cast.remove("Chapman")
+>>> print(cast)
+['Cleese', 'Palin', 'Jones', 'Idle', 'Gilliam']
+>>> cast.insert(0, "Chapman")
+>>> print(cast)
+['Chapman', 'Cleese', 'Palin', 'Jones', 'Idle', 'Gilliam']
+
+
+iterations
+>>> for each_obj in cast:
+	print(each_obj)
+
+>>> count = 0
+>>> while count < len(cast):
+	print(cast[count])
+	count = count+1
+########################3
+list within list	
+##########################
+>>> movies = ["The Holy Grail", 1975, "Terry Jones & Terry Gilliam", 91,["Graham Chapman",["Michael Palin", "John Cleese", "Terry Gilliam", "Eric Idle", "Terry Jones"]]]
+>>> print(movies)
+['The Holy Grail', 1975, 'Terry Jones & Terry Gilliam', 91, ['Graham Chapman', ['Michael Palin', 'John Cleese', 'Terry Gilliam', 'Eric Idle', 'Terry Jones']]]
+>>> print(movies[4][1][3])
+##############################################
+check list within list ie falttern data
+###########################################
+################
+level one
+###################
+
+for each_item in movies:
+if isinstance(each_item, list):
+for nested_item in each_item:
+print(nested_item)
+else:
+print(each_item)
+####################	
+Level Two	
+##################
+for each_item in movies:
+if isinstance(each_item, list):
+for nested_item in each_item:
+if isinstance(nested_item, list):
+for deeper_item in nested_item:
+print(deeper_item)
+else:
+print(nested_item)
+else:
+print(each_item)
+
+
+########### Create a function ######
+def print_lol(the_list):
+for each_item in the_list:
+if isinstance(each_item, list):
+print_lol(each_item)
+else:
+print(each_item)
+
+########### Limitions recursive list <----------recursion limit to 1,000 ----->
+
+
+
+
+Reusable code is great, but a shareable module is better.
+
+You should make your function shareable,so that everyone can use it.
+
+Modules let you organize your code for optimal sharing.
+The distribution utilities let you share your modules with the world.
+
+
+what is the module?
+A module is simply a text file that contains Python code. The main
+requirement is that the name of the file needs to end in .py: the Python
+extension. To turn your function into a module, save your code into an
+appropriately named file
+
+create a module:
+
+open python ide and editor copy and paste the following function as nester.py 
+
+def print_lol(the_list):
+for each_item in the_list:
+if isinstance(each_item, list):
+print_lol(each_item)
+else:
+print(each_item)
+
+#################### Getting the modulues 
+I’m preloaded with lots of modules in the Python Standard Library...
+and they are already on your computer.
+
+If the Standard Library doesn’t do it for you, why not try the Web?
+PyPI is where third-party Python modules hang out.
+
+The Python Package Index (or PyPI for short) provides a
+centralized repository for third-party Python modules on the
+Internet.
+
+
+ ################### Prepare your distribution
+ 
+ 
+ This is the Python name given to the collection of files that
+together allow you to build, package, and distribute your module.
+
+you can install your module into your local copy
+of Python, as well as upload your module to PyPI to share with the world.
+Follow along with the process describe
+
+creating a folder for your module.
+DOS command for create a folder
+mkdir nester
+Create “setup.py” file
+
+
+open python editor from python IDE
+
+copy and paste follwing code and save as setup.py in nester folder
+
+from distutils.core import setup
+setup(
+       name = 'nester',
+       version = '1.0.0',
+       py_modules = ['nester'],
+       author = 'tamilselvan',
+       author_email = 'tamilselvanvlr@hotmail.com',
+       url = 'http://www.dattatechnologies.com',
+       description = 'A simple printer of nested lists',
+     )
+
+create "nester.py" file 
+Opend python editor
+copy and paste follwing code and save as nester.py in nester folder
+
+def print_lol(the_list):
+	for each_item in the_list:
+		if isinstance(each_item, list):
+			print_lol(each_item)
+		else:
+	print(each_item)
+
+Build your distribution
+
+open DOS command line 
+navigate to nester folder
+check the folder
+
+issue the following command 
+python setup.py sdist
+
+check the folder
+
+Install your bulid 
+
+python setup.py install
+
+import nester
+movies = ["The Holy Grail", 1975, "Terry Jones & Terry Gilliam", 91,["Graham Chapman",["Michael Palin", "John Cleese", "Terry Gilliam", "Eric Idle", "Terry Jones"]]]
+nester.print_lol(movies)
+

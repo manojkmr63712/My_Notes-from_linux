@@ -1,0 +1,118 @@
+########### python map reduce program ##############
+
+this code to split the delimiter from a file
+
+mapper.py
+##################
+	#!/usr/bin/python
+	import sys
+	def mapper():
+	    for line in sys.stdin:
+	        line2 = line.strip().split(',')
+	        if len(line2) >= 2:	#some condition
+		    try:
+		        SYMBOL = line2[0]	
+	                Date = line2[10]
+		        Date = Date[7:]
+		        Symbol = SYMBOL +' : '+ Date
+		        Open = line2[2]
+		        High = line2[3]
+	                print '%s\t%s\t%s' % (Symbol,Open,High)
+		    except ValueError:
+		        pass
+	def main():
+		# sys.stdin = StringIO.StringIO(test_text)
+	    mapper()
+	    sys.stdin = sys.__stdin__
+
+	if __name__ == "__main__":	
+	    main()
+########################
+
+for an csv file follow this map file
+
+mappercsv.py
+########################
+	#!/usr/bin/python
+	import sys
+	import csv
+	def mapper():
+	    reader = csv.reader(sys.stdin)
+	    reader.next()
+	    for line in reader:
+	        line2 = line
+	        if len(line2) >= 2:	#some condition
+		    try:
+		        SYMBOL = line2[0]
+	                Date = line2[10]
+		        Date = Date[7:]
+		        Symbol = SYMBOL +' : '+ Date
+		        Open = line2[2]
+		        High = line2[3]
+	                print '%s\t%s\t%s' % (Symbol,Open,High)
+		    except ValueError:
+		        pass
+	def main():
+		# sys.stdin = StringIO.StringIO(test_text)
+	    mapper()
+	    sys.stdin = sys.__stdin__
+	if __name__ == "__main__":
+	    main()
+###########################
+
+
+reducer file
+
+reducer.py
+#####################
+	#!/usr/bin/python
+	#Reducer.py
+	import sys
+	symboldate = {}
+	symbolhigh = {}
+	#Partitoner
+	for line in sys.stdin:
+	    line = line.strip()
+	    symbol,open,high = line.split('\t')
+	
+	    if symbol in symboldate:
+	        symboldate[symbol].append(float(open))
+		symbolhigh[symbol].append(float(high))
+	    else:
+	        symboldate[symbol] = []
+		symbolhigh[symbol] = []
+	        symboldate[symbol].append(float(open))
+		symbolhigh[symbol].append(float(high))
+	
+	#Reducer
+	for symbol in symboldate.keys():
+	    ave_age = max(symboldate[symbol])
+	    min_age = min(symbolhigh[symbol])
+	    print '%s\t%s\t%s'% (symbol,ave_age,min_age)
+##########################
+
+save these file in particular location and change it execution mode
+
+########
+
+	chmod +x mapper.py
+	chmod +x reducer.py
+
+########
+
+
+put your data file into hdfs
+
+
+run via 
+
+######
+
+	hadoop jar /usr/local/hadoop/share/hadoop/tools/lib/hadoop-streaming-2.6.5.jar -mapper ~/Documents/mapppercsv.py -reducer ~/Documents/reducer.py -input /Data.csv -output /pythout12
+
+
+#######
+
+note this jar file is located in this location for hadoop 2, without this jar you cant able to run this program
+
+

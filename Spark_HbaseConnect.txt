@@ -1,0 +1,30 @@
+*******List the Hbase Table
+
+import org.apache.hadoop.hbase.HBaseConfiguration
+
+val conf = HBaseConfiguration.create()
+
+val tableName = "employee"
+
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat
+
+conf.set(TableInputFormat.INPUT_TABLE,tableName)
+
+import org.apache.hadoop.hbase.client.HBaseAdmin
+
+val admin = new HBaseAdmin(conf)
+
+admin.listTables
+
+
+****** Create Hbase Table
+
+val tableName = "retail"
+
+import org.apache.hadoop.hbase.{HTableDescriptor, HColumnDescriptor}
+
+val tabl = new HTableDescriptor(tableName)
+
+tabl.addFamily(new HColumnDescriptor("cf".getBytes()))
+
+admin.createTable(tabl)

@@ -1,0 +1,7 @@
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+
+val schema = StructType(Array(StructField("ID", StringType),StructField("START", StringType),StructField("STOP", StringType),StructField("ENCOUNTER", StringType),StructField("CODE", StringType),StructField("DESCRIPTION", StringType),StructField("REASONCODE", StringType),StructField("REASONDESCRIPTION", StringType)))
+
+val fileStreamDf = spark.readStream.option("header", "true").schema(schema).csv("/home/manoj/Documents/synthea/output/csv/careplans")
+
+val query = fileStreamDf.writeStream.format("console").outputMode(OutputMode.Append()).start().awaitTermination()

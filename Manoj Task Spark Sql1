@@ -1,0 +1,80 @@
+
+scala> val r1 = List(("nirmal","male",20000),("arun","male",20000),("suren","male",15000),("shymala","female",10000),("sankiri","female",20000),("nirmal","male",15000),("arun","male",30000),("suren","male",17500),("shymala","female",15000),("sankiri","female",22000),("nirmal","male",27000),("arun","male",24500),("suren","male",12400),("shymala","female",12000),("sankiri","female",10000),("manoj","male",3657))
+r1: List[(String, String, Int)] = List((nirmal,male,20000), (arun,male,20000), (suren,male,15000), (shymala,female,10000), (sankiri,female,20000), (nirmal,male,15000), (arun,male,30000), (suren,male,17500), (shymala,female,15000), (sankiri,female,22000), (nirmal,male,27000), (arun,male,24500), (suren,male,12400), (shymala,female,12000), (sankiri,female,10000), (manoj,male,3657))
+
+scala> val rdd1 = sc.parallelize(r1)
+rdd1: org.apache.spark.rdd.RDD[(String, String, Int)] = ParallelCollectionRDD[0] at parallelize at <console>:26
+
+scala> rdd1.collect.foreach(println)
+(nirmal,male,20000)                                                             
+(arun,male,20000)
+(suren,male,15000)
+(shymala,female,10000)
+(sankiri,female,20000)
+(nirmal,male,15000)
+(arun,male,30000)
+(suren,male,17500)
+(shymala,female,15000)
+(sankiri,female,22000)
+(nirmal,male,27000)
+(arun,male,24500)
+(suren,male,12400)
+(shymala,female,12000)
+(sankiri,female,10000)
+(manoj,male,3657)
+
+
+scala> val e = rdd1.map{x =>
+     | val name = x._1
+     | val gender = x._2
+     | val sal = x._3
+     | val mykey = (name,gender)
+     | (mykey,sal)
+     | }
+e: org.apache.spark.rdd.RDD[((String, String), Int)] = MapPartitionsRDD[3] at map at <console>:28
+
+scala> e.collect.foreach(println)
+((nirmal,male),20000)
+((arun,male),20000)
+((suren,male),15000)
+((shymala,female),10000)
+((sankiri,female),20000)
+((nirmal,male),15000)
+((arun,male),30000)
+((suren,male),17500)
+((shymala,female),15000)
+((sankiri,female),22000)
+((nirmal,male),27000)
+((arun,male),24500)
+((suren,male),12400)
+((shymala,female),12000)
+((sankiri,female),10000)
+((manoj,male),3657)
+
+scala> val result = e.reduceByKey(_+_)
+result: org.apache.spark.rdd.RDD[((String, String), Int)] = ShuffledRDD[4] at reduceByKey at <console>:30
+
+scala> result.collect
+res3: Array[((String, String), Int)] = Array(((arun,male),74500), ((suren,male),44900), ((manoj,male),3657), ((nirmal,male),62000), ((shymala,female),37000), ((sankiri,female),52000))
+
+scala> result.collect.foreach(println)
+((arun,male),74500)
+((suren,male),44900)
+((manoj,male),3657)
+((nirmal,male),62000)
+((shymala,female),37000)
+((sankiri,female),52000)
+
+scala> result.toDF.show()
++----------------+-----+
+|              _1|   _2|
++----------------+-----+
+|     [arun,male]|74500|
+|    [suren,male]|44900|
+|    [manoj,male]| 3657|
+|   [nirmal,male]|62000|
+|[shymala,female]|37000|
+|[sankiri,female]|52000|
++----------------+-----+
+
+

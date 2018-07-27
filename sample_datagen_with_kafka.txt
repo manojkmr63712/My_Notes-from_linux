@@ -1,0 +1,170 @@
+##########  Sensor Data Processing  ###########
+
+Data Generator
+
+	Python Code to generate data like device id, time, heart rate, temperature. This code generate 99 records per second
+	%
+	import json
+	from random import randint
+	from random import randrange
+	import os
+	import sys
+	import time
+	class Datagen:
+    	    def write_qps(self, dest, qps):
+        	sleep = 3.0 / qps
+        	while True:
+            	    self.write(dest, 1)
+                    time.sleep(sleep)
+ 	    def write(self, dest, count):
+        	for i in range(count):
+	    	    for j in range(1,100):
+			deviceid = 'dev'+str(j)
+      	 		heartrate = randint(90, 120)
+     	 	      	temperature = randrange(36,38)
+		    	dest.write("%(device)s - - \Heartrate:%(heartrate)s\ Temperature:%(temp)s\n" %
+			    {'device':deviceid,'heartrate':heartrate,'temp':temperature})
+		    	dest.flush()
+
+	Datagen().write_qps(sys.stdout, 1)
+	%
+
+save the script xxx.py
+
+run by % python xxx.py > outdata.log % 
+
+this command will print the output data to outdata.log
+
+even we can script this into shell script to run while
+ 
+the sricpt file is created to start the python file and write the output to outdata.log
+
+Data Pipeline
+
+	Flume used to tail the out record from the generator
+	%
+	# Name the components on this agent
+	wk.sources = ws
+	wk.sinks = kaf
+	wk.channels = mem
+
+	# Describe/configure the source
+	wk.sources.ws.type = exec
+	wk.sources.ws.command = tail -F /opt/projec/logs/outdata.log
+
+	
+	# Describe the sink
+
+	wk.sinks.kaf.type = org.apache.flume.sink.kafka.KafkaSink
+	#wk.sinks.kaf.type = org.apache.flume.channel.kafka.KafkaChannel
+	wk.sinks.kaf.brokerList = localhost:9092
+	wk.sinks.kaf.topic = manojtest
+	#wk.sinks.kaf.type = logger
+
+	# Use a channel which buffers events in memory
+	wk.channels.mem.type = memory
+	wk.channels.mem.capacity = 1000000
+	wk.channels.mem.transactionCapacity = 1000000
+	wk.channels.mem.byteCapacity = 800000
+	
+	# Bind the source and sink to the channel
+	wk.sources.ws.channels = mem
+	wk.sinks.kaf.channel = mem
+	%
+
+
+	Kafka source 
+
+	%
+	start the zookeeper
+
+	start the kafka server
+
+	create the topic used in flume
+		
+	%
+
+
+Data Process
+
+	Spark 
+
+	%
+	stream the kafka consumer to spark to analzye the data stream 
+
+
+
+
+
+
+the down list the sampe program to analyze the log file
+	
+
+
+########################################################################
+
+
+
+
+
+################# spark
+
+ #	val data = sc.textFile("/opt/projec/logs/outdata.log")
+ 
+ #	val datasplit = data.map(x => (x.split(" ")(0),x.split(":")(1),x.split(":")(2))).map(y => (y._1.toString,y._2.split(" +")(0).toInt,y._3.toInt))
+
+ #	val datasplit1 = datasplit.map{x =>
+	val id = x._1
+	val heart = x._2
+	val temp = x._3
+	val groupid = (id)
+	(groupid,heart,temp)
+	}
+
+ #	val datagroup1 = datasplit1.map{case((id),heart,temp)=>(id,(heart,temp))}.groupByKey()
+
+ #	datagroup1.map{case (k,v) => (k, v.size)}.foreach(println)
+
+
+
+
+
+Anothr method
+
+ #	import scala.collection.mutable
+
+ #	scala> import scala.collection.mutable
+import scala.collection.mutable
+
+scala> val initialSet = mutable.HashSet.empty[(Int,Int)]
+initialSet: scala.collection.mutable.HashSet[(Int, Int)] = Set()
+
+scala> val addToSet = (s: mutable.HashSet[(Int,Int)], v: (Int,Int)) => s +=v
+addToSet: (scala.collection.mutable.HashSet[(Int, Int)], (Int, Int)) => scala.collection.mutable.HashSet[(Int, Int)] = <function2>
+
+scala> val mergePartitionSets = (p1: mutable.HashSet[(Int,Int)],p2:mutable.HashSet[(Int,Int)]) => p1 ++= p2
+mergePartitionSets: (scala.collection.mutable.HashSet[(Int, Int)], scala.collection.mutable.HashSet[(Int, Int)]) => scala.collection.mutable.HashSet[(Int, Int)] = <function2>
+
+scala> val uniqueByKey = datagroup1.aggregate
+aggregate   aggregateByKey
+
+scala> val uniqueByKey = datagroup1.aggregateByKey(initialSet)(addToSet,mergePartitionSets)
+<console>:40: error: type mismatch;
+ found   : (scala.collection.mutable.HashSet[(Int, Int)], (Int, Int)) => scala.collection.mutable.HashSet[(Int, Int)]
+ required: (scala.collection.mutable.HashSet[(Int, Int)], Iterable[(Int, Int)]) => scala.collection.mutable.HashSet[(Int, Int)]
+       val uniqueByKey = datagroup1.aggregateByKey(initialSet)(addToSet,mergePartitionSets)
+                                                               ^
+
+scala> val uniqueByKey = datasplit1.aggregateByKey(initialSet)(addToSet,mergePartitionSets)
+<console>:38: error: value aggregateByKey is not a member of org.apache.spark.rdd.RDD[(String, Int, Int)]
+       val uniqueByKey = datasplit1.aggregateByKey(initialSet)(addToSet,mergePartitionSets)
+                                    ^
+
+scala> datasplit1
+res26: org.apache.spark.rdd.RDD[(String, Int, Int)] = MapPartitionsRDD[33] at map at <console>:28
+
+scala> datasplit1.take(2).foreach(println)
+(dev1,116,37)
+(dev2,106,37)
+
+

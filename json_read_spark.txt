@@ -1,0 +1,13 @@
+import sqlContext.implicits._
+
+import org.apache.spark.sql.functions._
+
+val people = sqlContext.read.json("/home/manoj/Desktop/Data/nrm.json")
+
+people.filter(people("length")>100).select("gender").show
+
+people.registerTempTable("data")
+
+sqlContext.sql("select * from data where gender = 'M' and length > 100").show
+
+sqlContext.sql("select userId from data where gender = 'M' group by userId").show

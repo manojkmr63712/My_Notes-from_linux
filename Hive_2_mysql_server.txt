@@ -1,0 +1,258 @@
+Mysql
+
+
+mysql> CREATE USER 'hive'@'%' IDENTIFIED BY '123';
+
+mysql> GRANT all on *.* to 'hive'@localhost identified by '123';
+os
+mysql> flush privileges; 
+
+
+
+down 1.2.1 rf
+
+# tar -xzf apache-hive-1.0.0-bin.tar.gz
+
+# sudo mv apache-hive-1.0.0-bin /usr/local/hive
+
+#  cd /usr/local
+
+# ls
+
+# sudo nano ~/.bashrc
+
+export HIVE_HOME=/usr/local/hive
+export PATH=$PATH:$HIVE_HOME/bin
+export HADOOP_USER_CLASSPATH_FIRST=true
+
+# source ~/.bashrc
+
+# cd /usr/local/hive/bin
+
+# nano hive-config.sh
+
+export HADOOP_HOME=/usr/local/hadoop
+
+# cd ~
+
+# hive
+
+hive> 
+
+hive> exit
+
+# cd /usr/local/hive/conf
+
+# sudo apt-get install libmysql-java
+
+# ln -s /usr/share/java/mysql-connector-java.jar /usr/local/hive/lib
+
+# mv hive-default.xml.template hive-site.xml
+
+# nano hive-site.xml
+
+ <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://localhost/metastore?createDatabaseIfNotExist=true&amp;useSSL=false</value>
+    <description>JDBC connect string for a JDBC metastore</description>
+  </property>
+
+
+<property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+    <description>Driver class name for a JDBC metastore</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>nirmal</value>
+    <description>Username to use against metastore database</description>
+  </property>
+
+<property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>password</value>
+    <description>password to use against metastore database</description>
+  </property>
+  
+
+
+
+<name>hive.exec.scratchdir</name>
+<value>/tmp/hive-${user.name}</value>
+
+<name>hive.exec.local.scratchdir</name>
+<value>/tmp/${user.name}</value>
+
+<name>hive.downloaded.resources.dir</name>
+<value>/tmp/${user.name}_resources</value>
+
+<name>hive.scratch.dir.permission</name>
+<value>733</value>
+
+
+ <property>
+         <name>beeline.hs2.connection.user</name>
+         <value>hive2</value>
+     </property>
+
+     <property>
+         <name>beeline.hs2.connection.password</name>
+         <value>password</value>
+     </property>
+
+     <property>
+         <name>beeline.hs2.connection.hosts</name>
+         <value>localhost:10000</value>
+ </property>
+
+	 
+===============================
+hadoop
+===============================
+
+# cd /usr/local/hadoop/etc/hadoop
+
+# nano core-site.xml
+
+<property>
+  <name>hadoop.proxyuser.ubuntu.groups</name>
+<value>*</value>
+</property>
+
+<property>
+ <name>hadoop.proxyuser.ubuntu.hosts</name>
+ <value>*</value>
+</property>
+
+
+=============================
+hive
+==============================
+
+# cd /usr/local/hive/bin
+
+# schematool -initSchema -dbType mysql
+
+
+===============================
+Start Hive Server2
+===============================
+
+# cd /usr/local/hive/bin
+
+# hiveserver2
+
+....
+....
+
+
+===================================
+beeline Check
+===================================
+
+# cd /usr/local/hive/bin
+
+# ./beeline
+
+beeline> !connect jdbc:hive2://localhost:10000/default
+
+Connecting to jdbc:hive2://localhost:10000/default
+
+Enter username for jdbc:hive2://localhost:10000/default: hive2
+Enter password for jdbc:hive2://localhost:10000/default: ***
+
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/usr/local/hive/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/local/hadoop/share/hadoop/common/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Connected to: Apache Hive (version 2.1.0)
+Driver: Hive JDBC (version 2.1.0)
+17/06/22 22:21:01 [main]: WARN jdbc.HiveConnection: Request to set autoCommit to false; Hive does not support autoCommit=false.
+Transaction isolation: TRANSACTION_REPEATABLE_READ
+
+0: jdbc:hive2://localhost:10000/default> show databases;
+
++----------------+--+
+| database_name  |
++----------------+--+
+| default        |
+| nirmal         |
++----------------+--+
+
+
+
+
+
+
+# hive
+
+hive> create database data;
+
+hive> use data;
+
+hive> create table data_table(id int,name string);
+
+
+# mysql -u root -p123
+
+mysql> use metastore;
+
+mysql> show tables;
+
++---------------------------+
+| Tables_in_metastore       |
++---------------------------+
+| BUCKETING_COLS            |
+| CDS                       |
+| COLUMNS_V2                |
+| DATABASE_PARAMS           |
+| DBS                       |
+| FUNCS                     |
+| FUNC_RU                   |
+| GLOBAL_PRIVS              |
+| PARTITIONS                |
+| PARTITION_KEYS            |
+| PARTITION_KEY_VALS        |
+| PARTITION_PARAMS          |
+| PART_COL_STATS            |
+| ROLES                     |
+| SDS                       |
+| SD_PARAMS                 |
+| SEQUENCE_TABLE            |
+| SERDES                    |
+| SERDE_PARAMS              |
+| SKEWED_COL_NAMES          |
+| SKEWED_COL_VALUE_LOC_MAP  |
+| SKEWED_STRING_LIST        |
+| SKEWED_STRING_LIST_VALUES |
+| SKEWED_VALUES             |
+| SORT_COLS                 |
+| TABLE_PARAMS              |
+| TAB_COL_STATS             |
+| TBLS                      |
+| VERSION                   |
++---------------------------+
+
+mysql> select * from TBLS;
+
++--------+-------------+-------+------------------+-------+-----------+-------+------------+---------------+--------------------+--------------------+
+| TBL_ID | CREATE_TIME | DB_ID | LAST_ACCESS_TIME | OWNER | RETENTION | SD_ID | TBL_NAME   | TBL_TYPE      | VIEW_EXPANDED_TEXT | VIEW_ORIGINAL_TEXT |
++--------+-------------+-------+------------------+-------+-----------+-------+------------+---------------+--------------------+--------------------+
+|      1 |  1487749989 |     2 |                0 | user  |         0 |     1 | data_table | MANAGED_TABLE | NULL               | NULL               |
++--------+-------------+-------+------------------+-------+-----------+-------+------------+---------------+--------------------+--------------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
